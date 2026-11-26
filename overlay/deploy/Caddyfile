@@ -1,4 +1,42 @@
 {$IIR_LAN_DOMAIN} {
     tls {$IIR_TLS_CERT} {$IIR_TLS_KEY}
-    reverse_proxy 127.0.0.1:8088
+
+    # Offline OTA management: REST, WebSocket and large package uploads.
+    # 离线 OTA 管理：REST、WebSocket 与大体积升级包上传。
+    request_body {
+        max_size 512MB
+    }
+    handle /api/ota/* {
+        reverse_proxy 127.0.0.1:8090
+    }
+    handle /ws/ota/* {
+        reverse_proxy 127.0.0.1:8090
+    }
+
+    # Inspection Gateway: REST, WebSocket alerts and archived captures.
+    # 巡检业务网关：REST、WebSocket 告警与归档抓拍资源。
+    handle /api/inspection/* {
+        reverse_proxy 127.0.0.1:8089
+    }
+    handle /ws/inspection* {
+        reverse_proxy 127.0.0.1:8089
+    }
+    handle /captures/* {
+        reverse_proxy 127.0.0.1:8089
+    }
+
+    # MediaMTX WebRTC WHIP/WHEP; strip the public prefix.
+    # MediaMTX WebRTC WHIP/WHEP；转发前去掉公开前缀。
+    handle_path /whep/* {
+        reverse_proxy 127.0.0.1:8889
+    }
+    handle_path /whip/* {
+        reverse_proxy 127.0.0.1:8889
+    }
+
+    # Everything else: Web-Next pages, control WebSocket and student H5.
+    # 其余请求：Web-Next 页面、控制 WebSocket 与学生端 H5。
+    handle {
+        reverse_proxy 127.0.0.1:8088
+    }
 }

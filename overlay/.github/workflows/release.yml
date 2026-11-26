@@ -1,0 +1,49 @@
+name: Release OTA Package
+
+# Build firmware/Web-Next artifacts and create the manifest-driven OTA package.
+# 构建固件/Web-Next 产物并生成 manifest 驱动的 OTA 升级包。
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-ota:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install build tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends \
+            gcc-arm-none-eabi binutils-arm-none-eabi cmake ninja-build
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build firmware
+        run: |
+          cmake --preset stm32-diff-release -DIIR_FW_VERSION="${GITHUB_REF_NAME#v}"
+          cmake --build --preset stm32-diff-release
+      - name: Build Web-Next
+        run: cargo build --release --manifest-path Master/Web-Next/Cargo.toml
+      - name: Build offline OTA package
+        run: |
+          python3 scripts/build_ota_package.py \
+            --version "${GITHUB_REF_NAME#v}" \
+            --firmware build/stm32-diff-release/xzcit_iir_diff.bin \
+            --master-bundle Master/Web-Next/target/release/web_next \
+            --output "xzcit-iir-ota-${GITHUB_REF_NAME#v}.tar.gz"
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: xzcit-iir-ota
+          path: xzcit-iir-ota-*.tar.gz
+      - name: Attach package to release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: xzcit-iir-ota-*.tar.gz
