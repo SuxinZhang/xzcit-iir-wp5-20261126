@@ -10,12 +10,12 @@ test "$($IIR_MEDIAMTX_BIN --version)" = v1.11.3
 venv_dir=$(dirname "$(dirname "$IIR_PYTHON")")
 test ! -e "$venv_dir" || { printf 'Virtual environment path exists: %s\n' "$venv_dir" >&2; exit 1; }
 python3 -m venv "$venv_dir"
-"$IIR_PYTHON" -m pip install aiohttp numpy sherpa-onnx piper-tts "$root/Master/ROS/ros2_ws/src/iir_interaction"
+"$IIR_PYTHON" -m pip install aiohttp numpy sherpa-onnx piper-tts -r "$root/Master/Gateway/requirements.txt" -r "$root/Master/OTA/requirements.txt" "$root/Master/ROS/ros2_ws/src/iir_interaction"
 : "${IIR_ROS_SETUP:?}"
 set +u
 source "$IIR_ROS_SETUP"
 set -u
-colcon build --base-paths "$root/Master/ROS/ros2_ws/src" --packages-select iir_interaction --build-base "$root/Master/ROS/ros2_ws/build" --install-base "$root/Master/ROS/ros2_ws/install"
+colcon build --base-paths "$root/Master/ROS/ros2_ws/src" --packages-select iir_interfaces iir_vision_rknn iir_interaction iir_navigation_vision --build-base "$root/Master/ROS/ros2_ws/build" --install-base "$root/Master/ROS/ros2_ws/install"
 cargo build --offline --release --manifest-path "$root/Master/Web-Next/Cargo.toml"
 bash "$IIR_DEPLOY_DIR/install-keywords.sh" "$IIR_DEPLOY_DIR/kws/keywords.txt" "$IIR_KWS_KEYWORDS"
 mkdir -p "$unit_dir"

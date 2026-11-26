@@ -1,0 +1,24 @@
+[Unit]
+Description=IIR OTA Agent (independent from iir.target)
+Documentation=file:///opt/iir/current/docs/ORANGE_PI_SECTION3_RESULTS.md
+After=network-online.target
+Wants=network-online.target
+
+# Do not add PartOf=iir.target: a failed business upgrade must leave OTA
+# reachable for automatic or manual recovery.
+# 禁止添加 PartOf=iir.target：业务升级失败时 OTA 必须仍在线以便自动/手动救砖。
+
+[Service]
+Type=exec
+User=orangepi
+SupplementaryGroups=dialout
+EnvironmentFile=%h/.config/iir/wp5.env
+Environment=IIR_OTA_HOST=127.0.0.1
+Environment=IIR_OTA_PORT=8090
+WorkingDirectory=${IIR_DEPLOY_DIR}/../Master/OTA
+ExecStart=/usr/bin/env ${IIR_PYTHON} -m app
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

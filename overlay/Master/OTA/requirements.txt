@@ -1,0 +1,5 @@
+# OTA agent runtime dependencies.
+# OTA 代理运行时依赖。
+fastapi>=0.110
+uvicorn[standard]>=0.29
+python-multipart>=0.0.9
