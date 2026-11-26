@@ -1,0 +1,39 @@
+[Unit]
+PartOf=iir.target
+Description=IIR offline speech recognition
+Requires=iir-audio.service
+After=iir-audio.service
+# Retry forever: a robot that gives up after five failures stays deaf until
+# someone logs in, and the wake rate is zero for as long as that lasts.
+# 失败后一直重试：五次失败就放弃会让机器人一直失聪，直到有人登录处理，期间唤醒率是零。
+StartLimitIntervalSec=0
+
+[Service]
+Type=exec
+Restart=on-failure
+RestartSec=2
+TimeoutStopSec=5
+EnvironmentFile=%h/.config/iir/wp5.env
+# Wake tuning defaults. Values in wp5.env override these.
+# 唤醒调参默认值，wp5.env 中的同名项优先。
+# 8 active paths caught one more wake phrase than 4 on board recordings at
+# the same decode cost; a higher keywords_score hurts recall on real audio.
+# 板端录音实测 8 路比 4 路多唤醒一条且开销相同；调高 keywords_score 反而更差。
+Environment=IIR_KWS_THREADS=2
+Environment=IIR_KWS_MAX_ACTIVE_PATHS=8
+Environment=IIR_KWS_SCORE=1.0
+Environment=IIR_KWS_THRESHOLD=0.25
+Environment=IIR_KWS_TRAILING_BLANKS=1
+Environment=IIR_WAKE_WINDOW_SECONDS=6
+Environment=IIR_ASR_MIN_SILENCE_SECONDS=0.4
+# aec.sh start is idempotent and reloads the echo-cancel module when the
+# recorded one vanished, so every restart of this unit also repairs the audio
+# path that parec needs. Without it a dead module means a silent crash loop.
+# aec.sh start 可重复执行，模块消失时会重新加载，因此本单元每次重启都会顺带修复
+# parec 依赖的音频链路；否则模块一消失就变成静默的崩溃循环。
+ExecStartPre=/usr/bin/env ${IIR_DEPLOY_DIR}/aec.sh start
+ExecStartPre=/usr/bin/python3 ${IIR_DEPLOY_DIR}/wait-ready.py audio
+ExecStart=/usr/bin/env ${IIR_PYTHON} -m iir_interaction.asr
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,4 @@
+{$IIR_LAN_DOMAIN} {
+    tls {$IIR_TLS_CERT} {$IIR_TLS_KEY}
+    reverse_proxy 127.0.0.1:8088
+}

@@ -1,0 +1,14 @@
+[Unit]
+PartOf=iir.target
+Description=IIR microphone Opus stream
+Requires=iir-aec.service iir-mediamtx.service
+After=iir-aec.service iir-mediamtx.service
+
+[Service]
+Type=exec
+EnvironmentFile=%h/.config/iir/wp5.env
+ExecStartPre=/usr/bin/python3 ${IIR_DEPLOY_DIR}/wait-ready.py rtsp
+ExecStart=/usr/bin/env ${IIR_DEPLOY_DIR}/mic.sh
+
+[Install]
+WantedBy=default.target

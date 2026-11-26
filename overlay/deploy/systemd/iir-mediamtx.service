@@ -1,0 +1,14 @@
+[Unit]
+PartOf=iir.target
+Description=IIR MediaMTX
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=exec
+EnvironmentFile=%h/.config/iir/wp5.env
+ExecStartPre=/usr/bin/env ${IIR_PYTHON} ${IIR_DEPLOY_DIR}/mediamtx/render.py
+ExecStart=/usr/bin/env ${IIR_MEDIAMTX_BIN} ${IIR_MEDIAMTX_CONFIG}
+
+[Install]
+WantedBy=default.target

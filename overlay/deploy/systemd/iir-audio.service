@@ -1,0 +1,15 @@
+[Unit]
+PartOf=iir.target
+Description=IIR audio service
+Requires=iir-aec.service iir-mediamtx.service
+After=iir-aec.service iir-mediamtx.service
+
+[Service]
+Type=exec
+EnvironmentFile=%h/.config/iir/wp5.env
+ExecStartPre=/usr/bin/bash -c 'pactl list short sinks | awk '\''$2 == "iir_aec_sink" {found=1} END {exit !found}'\'''
+ExecStartPre=/usr/bin/python3 ${IIR_DEPLOY_DIR}/wait-ready.py webrtc
+ExecStart=/usr/bin/env ${IIR_DEPLOY_DIR}/run-audio.sh
+
+[Install]
+WantedBy=default.target

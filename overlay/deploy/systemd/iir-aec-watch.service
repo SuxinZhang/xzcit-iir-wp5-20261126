@@ -1,0 +1,35 @@
+[Unit]
+PartOf=iir.target
+Description=IIR echo cancellation watchdog
+Requires=iir-pulse.service iir-aec.service
+After=iir-pulse.service iir-aec.service iir-asr.service
+# Retry forever: the watchdog is the only thing that notices a silently
+# degraded microphone, so it must never give up and stay down.
+# 一直重试：只有这个看守会发现麦克风静默降级，它不能放弃重试后一直停着。
+StartLimitIntervalSec=0
+
+[Service]
+# A live parec stream is not failed by PulseAudio when its source disappears: it
+# is silently moved to the raw microphone, so ASR keeps transcribing without echo
+# cancellation and hears the robot's own TTS. Nothing else in the deployment
+# notices, so a periodic check re-creates the module and restarts ASR to move the
+# stream back onto it. This is separate from iir-aec.service because the check
+# must not gate boot order.
+# 源消失时 PulseAudio 不会让正在运行的 parec 失败，而是把流悄悄挪到原始麦克风，
+# 识别继续但失去回声消除、会听到自己的播报。部署里没有别的单元会发现，所以用周期性
+# 检查重建模块并重启 ASR 让流回去。与 iir-aec.service 分开，因为检查不能卡开机顺序。
+Type=simple
+Restart=always
+RestartSec=5
+TimeoutStopSec=5
+EnvironmentFile=%h/.config/iir/wp5.env
+Environment=IIR_AEC_CHECK_SECONDS=15
+# Keep its decisions on disk: a wake-rate complaint is often this watchdog's
+# restart history, and the user journal is not persisted on this image.
+# 把判断留下记录：唤醒率投诉常常就是这里的历史重启，而这个镜像不持久化用户日志。
+StandardOutput=append:/tmp/iir-aec-watch.log
+StandardError=append:/tmp/iir-aec-watch.log
+ExecStart=/usr/bin/env ${IIR_DEPLOY_DIR}/aec.sh watch
+
+[Install]
+WantedBy=default.target

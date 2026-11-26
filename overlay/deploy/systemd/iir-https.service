@@ -1,0 +1,14 @@
+[Unit]
+PartOf=iir.target
+Description=IIR HTTPS reverse proxy
+Requires=iir-web.service
+After=network-online.target iir-web.service
+Wants=network-online.target
+
+[Service]
+Type=exec
+EnvironmentFile=%h/.config/iir/wp5.env
+ExecStart=/usr/bin/env ${IIR_CADDY_BIN} run --config ${IIR_DEPLOY_DIR}/Caddyfile --adapter caddyfile
+
+[Install]
+WantedBy=default.target

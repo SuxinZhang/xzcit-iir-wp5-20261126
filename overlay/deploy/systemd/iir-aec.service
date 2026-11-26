@@ -1,0 +1,25 @@
+[Unit]
+PartOf=iir.target
+Description=IIR PulseAudio echo cancellation
+Requires=iir-pulse.service
+After=iir-pulse.service
+# Retry forever: echo cancellation is what keeps the robot from transcribing its
+# own announcements, and giving up leaves the wake rate degraded with no alarm.
+# 一直重试：回声消除决定机器人会不会把自己的播报当成说话，放弃重试就等于静默降级。
+StartLimitIntervalSec=0
+
+[Service]
+# One-shot on purpose: iir-audio.service and iir-asr.service wait for this unit
+# and then assert that iir_aec_sink/iir_aec_source exist, so the module has to be
+# created before this unit reports success. Self-healing lives in
+# iir-aec-watch.service, which must not gate the boot order.
+# 有意做成一次性：audio 与 asr 都等这个单元，随后断言 iir_aec_sink/source 存在，
+# 所以模块必须在本单元报告成功之前建好。自愈交给 iir-aec-watch.service，它不能卡开机顺序。
+Type=oneshot
+RemainAfterExit=yes
+EnvironmentFile=%h/.config/iir/wp5.env
+ExecStart=/usr/bin/env ${IIR_DEPLOY_DIR}/aec.sh start
+ExecStop=/usr/bin/env ${IIR_DEPLOY_DIR}/aec.sh stop
+
+[Install]
+WantedBy=default.target

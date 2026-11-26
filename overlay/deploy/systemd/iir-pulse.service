@@ -1,0 +1,9 @@
+[Unit]
+PartOf=iir.target
+Description=IIR private PulseAudio daemon
+
+[Service]
+Type=forking
+PIDFile=%t/pulse/pid
+EnvironmentFile=%h/.config/iir/wp5.env
+ExecStart=/usr/bin/pulseaudio -n --daemonize=yes --exit-idle-time=-1 --file=${IIR_DEPLOY_DIR}/pulse.pa
